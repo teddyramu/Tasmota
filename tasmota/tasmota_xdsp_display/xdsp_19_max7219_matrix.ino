@@ -109,6 +109,18 @@ struct
     byte blink_iteration = 0;
 
 } LedMatrix_settings;
+const char* const dayNames[] = {
+    "*SUN*", "-MON-", "-TUE-", "-WED-", "-THU-", "*FRI*", "*SAT*"
+};
+
+const char* getDayOfWeekString(uint8_t dayOfWeek) 
+{
+    uint8_t correctedIndex = dayOfWeek - 1;
+    if (dayOfWeek <= 7) {
+        return dayNames[correctedIndex];
+    }
+    return "ERR"; 
+}
 
 // FUNC_DISPLAY_INIT_DRIVER
 bool MAX7291Matrix_initDriver(void)
@@ -276,6 +288,8 @@ bool MAX7291Matrix_clock(void)
 }
 
 // FUNC_DISPLAY_EVERY_SECOND
+
+
 bool MAX7291Matrix_showTime()
 {
     if(!LedMatrix_settings.show_clock) return false;
@@ -296,11 +310,68 @@ bool MAX7291Matrix_showTime()
     }
     else
     {
-        snprintf(timeStr, 10, "%02d:%02d", hr , mn);
+        //snprintf(timeStr, 10, "%02d:%02d", hr , mn);
+        char colon = (sc % 2 == 0) ? ':' : ' '; // Blink the colon every second
+        snprintf(timeStr, 10, "%02d%c%02d", hr , colon, mn); // Use the blinking colon
     }
     max7219_Matrix->drawText(timeStr, false); // false: do not clear desplay on update to prevent flicker
     return true;
 }
+
+// bool MAX7291Matrix_showTime()
+// {
+//     if (!LedMatrix_settings.show_clock) return false;
+
+//     uint8_t hr = RtcTime.hour;
+//     uint8_t mn = RtcTime.minute;
+//     uint8_t sc = RtcTime.second;
+//     char timeStr[10];
+
+//     // --- 1. 12/24 Hour Format Conversion ---
+//     if (!LedMatrix_settings.timeFormat24)
+//     {
+//         if (hr == 0) hr = 12;
+//         if (hr > 12) hr -= 12;
+//     }
+
+//     // --- 2. Determine Display Mode based on Matrix Size ---
+
+//     if (LedMatrix_settings.modulesPerRow >= 6)
+//     {
+//         // LARGE MATRIX: Always show HH:MM:SS
+//         snprintf(timeStr, 10, "%02d:%02d:%02d", hr, mn, sc);
+//     }
+//     else
+//     {
+//         // SMALL MATRIX: Alternate between Date (for 5 seconds) and Time (rest of the minute)
+        
+//         if (sc >= 24 && sc < 26) // Display Date from second 00 to 04 (5 seconds)
+//         {
+//             // Assuming RtcTime.day and RtcTime.month are available
+//             uint8_t day = RtcTime.day_of_month;
+//             uint8_t month = RtcTime.month;
+            
+//             // Format as DD.MM (e.g., 29.10)
+//             snprintf(timeStr, 10, "%02d/%02d", day, month);
+//         }
+//         else if (sc >= 26 && sc < 28) // Phase 2: Display Day of the Week (Seconds 05-09)
+//         {
+//             // Use the assumed external RtcDayOfWeek structure and the helper function
+//             const char* dayAbbr = getDayOfWeekString(RtcTime.day_of_week);
+//             snprintf(timeStr, 10, "%s", dayAbbr);
+//         }
+//         else // Display Time from second 05 to 59 (55 seconds)
+//         {
+//             // Original blinking colon logic
+//             char colon = (sc % 2 == 0) ? ':' : ' '; // Blink the colon every second
+//             snprintf(timeStr, 10, "%02d%c%02d", hr, colon, mn); // Use the blinking colon
+//         }
+//     }
+
+//     // --- 3. Update Display ---
+//     max7219_Matrix->drawText(timeStr, false); // false: do not clear display on update to prevent flicker
+//     return true;
+// }
 
 #endif // USE_DISPLAY_MODES1TO5
 
